@@ -1,249 +1,131 @@
 import React, { useState } from 'react'
-import { motion } from 'framer-motion'
-import {
-    Mail,
-    Phone,
-    MapPin,
-    Github,
-    Linkedin,
-    Send,
-    ArrowUpRight,
-    Copy,
-    Check,
-    MessageSquare,
-} from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowUpRight, Check, Copy, Github, Linkedin, Mail, MapPin, MessageCircle, Phone, Send } from 'lucide-react'
+import { PROFILE } from '../data'
+import { Reveal, SectionHeader, TiltCard, Magnetic, ease } from './ui'
 
-const Contact = () => {
-    const [copiedField, setCopiedField] = useState(null)
-
-    const handleCopy = (text, field) => {
-        navigator.clipboard.writeText(text)
-        setCopiedField(field)
-        setTimeout(() => setCopiedField(null), 2000)
-    }
-
+function CopyButton({ text, label }) {
+    const [done, setDone] = useState(false)
     return (
-        <section
-            id="contact"
-            className="relative py-24 px-4 md:px-8 overflow-hidden"
+        <button
+            type="button"
+            aria-label={`Copy ${label}`}
+            onClick={() => {
+                navigator.clipboard?.writeText(text)
+                setDone(true)
+                setTimeout(() => setDone(false), 1800)
+            }}
+            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line/10 text-fg/70 transition-colors hover:text-fg"
         >
-            {/* Ambient Subtle Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[380px] bg-purple-600/12 blur-[140px] rounded-full pointer-events-none" />
-
-            <div className="container mx-auto max-w-5xl relative z-10">
-                {/* Editorial Section Header */}
-                <div className="text-center max-w-2xl mx-auto mb-16">
-                    <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/25 text-purple-300 text-xs font-semibold mb-4"
-                    >
-                        <MessageSquare size={13} className="text-purple-400" />
-                        <span>Direct Communication</span>
-                    </motion.div>
-
-                    <motion.h2
-                        initial={{ opacity: 0, y: 15 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                        viewport={{ once: true }}
-                        className="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-3"
-                    >
-                        Get In{' '}
-                        <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent">
-                            Touch
-                        </span>
-                    </motion.h2>
-
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                        viewport={{ once: true }}
-                        className="text-gray-400 text-sm md:text-base"
-                    >
-                        I'm always open to discussing new projects, creative ideas, or opportunities.
-                    </motion.p>
-                </div>
-
-                {/* Main Contact Architectural Container */}
-                <motion.div
-                    initial={{ opacity: 0, y: 28 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.55 }}
-                    viewport={{ once: true }}
-                    className="relative rounded-3xl bg-[#110e1b]/80 backdrop-blur-xl border border-white/[0.08] overflow-hidden shadow-2xl shadow-purple-950/30"
+            <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                    key={done ? 'ok' : 'copy'}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    transition={{ duration: 0.25, ease }}
                 >
-                    {/* Top Ambient Glow Line */}
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
+                    {done ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                </motion.span>
+            </AnimatePresence>
+        </button>
+    )
+}
 
-                    {/* Decorative Background Grid */}
-                    <div
-                        className="absolute inset-0 opacity-[0.04] pointer-events-none"
-                        style={{
-                            backgroundImage:
-                                'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.8) 1px, transparent 0)',
-                            backgroundSize: '22px 22px',
-                        }}
-                    />
+const ROWS = [
+    { icon: Mail, label: 'Email', value: PROFILE.email, href: `mailto:${PROFILE.email}`, copy: PROFILE.email },
+    { icon: Phone, label: 'Phone', value: PROFILE.phone, href: `tel:${PROFILE.phoneIntl}`, copy: PROFILE.phone },
+    { icon: MapPin, label: 'Location', value: PROFILE.location },
+]
 
-                    <div className="relative z-10 p-6 md:p-10 lg:p-12">
-                        {/* 2x2 Contact Channels Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
-                            {/* Email Card */}
-                            <div className="group p-5 rounded-2xl bg-white/[0.025] hover:bg-white/[0.05] border border-white/[0.07] hover:border-purple-500/35 transition-all duration-300 flex items-start justify-between gap-3">
-                                <div className="flex items-start gap-4 min-w-0">
-                                    <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:bg-purple-500/20 group-hover:scale-105 transition-all duration-300 shrink-0">
-                                        <Mail size={21} />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <span className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-                                            Email
+export default function Contact() {
+    return (
+        <section id="contact" className="relative px-5 pb-20 pt-28 md:px-8 md:pt-36">
+            <div className="mx-auto max-w-6xl">
+                <SectionHeader
+                    id="contact"
+                    title="Let’s build something"
+                    highlight="solid together."
+                    lead="I’m open to new projects, collaborations, and full-time opportunities. Pick whichever channel suits you — I reply quickly."
+                />
+
+                <div className="grid gap-6 lg:grid-cols-12">
+                    <Reveal className="lg:col-span-7">
+                        <TiltCard className="h-full p-3" max={3}>
+                            <ul className="relative divide-y divide-line/[0.07]">
+                                {ROWS.map(({ icon: I, label, value, href, copy }) => (
+                                    <li key={label} className="flex items-center gap-4 p-4 md:p-5">
+                                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent-ink">
+                                            <I size={20} />
                                         </span>
-                                        <a
-                                            href="mailto:mohamedsherif21101@gmail.com"
-                                            className="text-sm md:text-base font-bold text-white hover:text-purple-300 transition-colors break-all"
-                                        >
-                                            mohamedsherif21101@gmail.com
-                                        </a>
-                                    </div>
-                                </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">{label}</p>
+                                            {href ? (
+                                                <a href={href} className="block truncate font-display text-base font-semibold text-fg transition-colors hover:text-accent-ink md:text-lg">
+                                                    {value}
+                                                </a>
+                                            ) : (
+                                                <p className="truncate font-display text-base font-semibold text-fg md:text-lg">{value}</p>
+                                            )}
+                                        </div>
+                                        {copy && <CopyButton text={copy} label={label.toLowerCase()} />}
+                                    </li>
+                                ))}
+                            </ul>
+                        </TiltCard>
+                    </Reveal>
 
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        handleCopy('mohamedsherif21101@gmail.com', 'email')
-                                    }
-                                    title="Copy email"
-                                    className="p-2 rounded-xl bg-white/[0.04] hover:bg-purple-500/20 border border-white/[0.08] text-gray-400 hover:text-purple-300 transition-colors shrink-0 cursor-pointer"
-                                >
-                                    {copiedField === 'email' ? (
-                                        <Check size={15} className="text-emerald-400" />
-                                    ) : (
-                                        <Copy size={15} />
-                                    )}
-                                </button>
-                            </div>
-
-                            {/* Phone Card */}
-                            <div className="group p-5 rounded-2xl bg-white/[0.025] hover:bg-white/[0.05] border border-white/[0.07] hover:border-purple-500/35 transition-all duration-300 flex items-start justify-between gap-3">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:bg-purple-500/20 group-hover:scale-105 transition-all duration-300 shrink-0">
-                                        <Phone size={21} />
-                                    </div>
-                                    <div>
-                                        <span className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-                                            Phone
-                                        </span>
-                                        <a
-                                            href="tel:+201007240656"
-                                            className="text-sm md:text-base font-bold text-white hover:text-purple-300 transition-colors"
-                                        >
-                                            01007240656
-                                        </a>
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => handleCopy('01007240656', 'phone')}
-                                    title="Copy phone number"
-                                    className="p-2 rounded-xl bg-white/[0.04] hover:bg-purple-500/20 border border-white/[0.08] text-gray-400 hover:text-purple-300 transition-colors shrink-0 cursor-pointer"
-                                >
-                                    {copiedField === 'phone' ? (
-                                        <Check size={15} className="text-emerald-400" />
-                                    ) : (
-                                        <Copy size={15} />
-                                    )}
-                                </button>
-                            </div>
-
-                            {/* Location Card */}
-                            <div className="group p-5 rounded-2xl bg-white/[0.025] hover:bg-white/[0.05] border border-white/[0.07] hover:border-purple-500/35 transition-all duration-300 flex items-start gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:bg-purple-500/20 group-hover:scale-105 transition-all duration-300 shrink-0">
-                                    <MapPin size={21} />
-                                </div>
-                                <div>
-                                    <span className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-                                        Location
-                                    </span>
-                                    <p className="text-sm md:text-base font-bold text-white">
-                                        Qusiya, Assiut, Egypt
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Social Profiles Card */}
-                            <div className="group p-5 rounded-2xl bg-white/[0.025] hover:bg-white/[0.05] border border-white/[0.07] hover:border-purple-500/35 transition-all duration-300 flex items-start gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:bg-purple-500/20 group-hover:scale-105 transition-all duration-300 shrink-0">
-                                    <Github size={21} />
-                                </div>
-                                <div className="flex-1">
-                                    <span className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-                                        Social
-                                    </span>
-                                    <div className="flex flex-wrap items-center gap-2.5">
-                                        <a
-                                            href="https://github.com/Azamsherif"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-purple-600/30 border border-white/10 hover:border-purple-400/40 text-xs font-semibold text-white transition-all duration-200 group/link"
-                                        >
-                                            <Github size={14} className="text-purple-400" />
-                                            <span>GitHub</span>
-                                            <ArrowUpRight
-                                                size={13}
-                                                className="text-gray-400 group-hover/link:text-white group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"
-                                            />
-                                        </a>
-
-                                        <a
-                                            href="https://linkedin.com/in/mohamed-sherif-kamel"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-purple-600/30 border border-white/10 hover:border-purple-400/40 text-xs font-semibold text-white transition-all duration-200 group/link"
-                                        >
-                                            <Linkedin size={14} className="text-purple-400" />
-                                            <span>LinkedIn</span>
-                                            <ArrowUpRight
-                                                size={13}
-                                                className="text-gray-400 group-hover/link:text-white group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"
-                                            />
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Bottom CTA Banner */}
-                        <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-r from-purple-600/15 via-fuchsia-600/10 to-indigo-600/15 border border-purple-500/20 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
-                            <div>
-                                <div className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-400 mb-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                    <span>Ready to Collaborate</span>
-                                </div>
-                                <p className="text-gray-200 text-sm md:text-base font-medium max-w-xl">
-                                    I'm always open to discussing new projects, creative ideas, or opportunities.
+                    <Reveal delay={0.1} className="lg:col-span-5">
+                        <div className="card relative h-full overflow-hidden p-8 text-fg">
+                            <span className="absolute inset-x-0 top-0 h-[3px] bg-[var(--accent)]" />
+                            <div className="relative flex h-full flex-col">
+                                <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-accent-ink">Ready to collaborate</p>
+                                <h3 className="mt-3 font-display text-3xl font-bold leading-tight">Have a project in mind?</h3>
+                                <p className="mt-3 text-sm leading-relaxed text-muted">
+                                    Tell me what you’re building — backend, database, or the full stack.
                                 </p>
+                                <div className="mt-8 flex flex-wrap gap-3">
+                                    <Magnetic>
+                                        <a
+                                            href={`mailto:${PROFILE.email}`}
+                                            className="btn-primary !px-6"
+                                        >
+                                            <Send size={15} /> Send an email
+                                        </a>
+                                    </Magnetic>
+                                    <Magnetic>
+                                        <a
+                                            href={PROFILE.whatsapp}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn-ghost"
+                                        >
+                                            <MessageCircle size={15} /> WhatsApp
+                                        </a>
+                                    </Magnetic>
+                                </div>
+                                <div className="mt-auto flex gap-2 pt-10">
+                                    {[
+                                        { href: PROFILE.github, icon: Github, label: 'GitHub' },
+                                        { href: PROFILE.linkedin, icon: Linkedin, label: 'LinkedIn' },
+                                    ].map(({ href, icon: I, label }) => (
+                                        <a
+                                            key={label}
+                                            href={href}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="group inline-flex items-center gap-2 rounded-full border border-line/10 px-4 py-2 text-xs font-semibold text-fg/80 transition-colors hover:text-fg hover:border-accent-soft"
+                                        >
+                                            <I size={14} /> {label}
+                                            <ArrowUpRight size={13} className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                                        </a>
+                                    ))}
+                                </div>
                             </div>
-
-                            <a
-                                href="mailto:mohamedsherif21101@gmail.com"
-                                className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-bold shadow-lg shadow-purple-600/30 hover:shadow-purple-500/50 transition-all duration-300 shrink-0 group/btn"
-                            >
-                                <Send
-                                    size={16}
-                                    className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform"
-                                />
-                                <span>Send Me an Email</span>
-                            </a>
                         </div>
-                    </div>
-                </motion.div>
+                    </Reveal>
+                </div>
             </div>
         </section>
     )
 }
-
-export default Contact

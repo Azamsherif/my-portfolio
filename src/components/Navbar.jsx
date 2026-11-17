@@ -1,193 +1,180 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Sun, Moon, Terminal, ArrowUpRight } from 'lucide-react'
+import { Menu, X, Sun, Moon, ArrowUpRight } from 'lucide-react'
+import { CHAPTERS, PROFILE } from '../data'
+import { useActiveChapter, lockScroll, unlockScroll } from '../lib/scroll'
+import { ease } from './ui'
 
-const Navbar = () => {
-    const [isScrolled, setIsScrolled] = useState(false)
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-    const [theme, setTheme] = useState('dark')
-    const [activeSection, setActiveSection] = useState('#hero')
+const LINKS = CHAPTERS.slice(1)
 
-    const navLinks = [
-        { name: 'Home', href: '#hero' },
-        { name: 'About', href: '#about' },
-        { name: 'Education', href: '#education' },
-        { name: 'Skills', href: '#skills' },
-        { name: 'Experience', href: '#experience' },
-        { name: 'Projects', href: '#projects' },
-        { name: 'Contact', href: '#contact' },
-    ]
-
-    // Scroll detection & active section tracking
+function useTheme() {
+    const [theme, setTheme] = useState(() => {
+        try {
+            const saved = localStorage.getItem('theme')
+            if (saved) return saved
+        } catch {}
+        return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+    })
     useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 40)
-
-            const scrollPosition = window.scrollY + 180
-            for (let i = navLinks.length - 1; i >= 0; i--) {
-                const section = document.querySelector(navLinks[i].href)
-                if (section && section.offsetTop <= scrollPosition) {
-                    setActiveSection(navLinks[i].href)
-                    break
-                }
-            }
-        }
-
-        window.addEventListener('scroll', handleScroll)
-        return () => window.removeEventListener('scroll', handleScroll)
-    }, [])
-
-    // Read saved theme or preferred scheme (نفس المنطق الأصلي بالكامل)
-    useEffect(() => {
-        const saved = localStorage.getItem('theme')
-        if (saved) {
-            setTheme(saved)
-            document.documentElement.classList.toggle('light', saved === 'light')
-        } else {
-            const prefersLight =
-                window.matchMedia &&
-                window.matchMedia('(prefers-color-scheme: light)').matches
-            const initial = prefersLight ? 'light' : 'dark'
-            setTheme(initial)
-            document.documentElement.classList.toggle('light', initial === 'light')
-        }
-    }, [])
-
-    const toggleTheme = () => {
+        document.documentElement.classList.toggle('light', theme === 'light')
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f6f6fb' : '#07070e')
+    }, [theme])
+    const toggle = () => {
         const next = theme === 'dark' ? 'light' : 'dark'
         setTheme(next)
-        localStorage.setItem('theme', next)
-        document.documentElement.classList.toggle('light', next === 'light')
+        try {
+            localStorage.setItem('theme', next)
+        } catch {}
     }
+    return [theme, toggle]
+}
+
+export default function Navbar() {
+    const active = useActiveChapter()
+    const [scrolled, setScrolled] = useState(false)
+    const [open, setOpen] = useState(false)
+    const [theme, toggleTheme] = useTheme()
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 40)
+        onScroll()
+        window.addEventListener('scroll', onScroll, { passive: true })
+        return () => window.removeEventListener('scroll', onScroll)
+    }, [])
+
+    useEffect(() => {
+        open ? lockScroll() : unlockScroll()
+    }, [open])
 
     return (
-        <header
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'pt-3 px-4 md:px-6' : 'pt-5 px-4 md:px-8'
-                }`}
-        >
-            <nav
-                className={`container mx-auto max-w-6xl transition-all duration-300 rounded-2xl ${isScrolled
-                        ? 'bg-[#110e1b]/85 backdrop-blur-xl border border-white/[0.09] shadow-2xl shadow-purple-950/30 px-5 py-3'
-                        : 'bg-transparent border border-transparent px-3 py-2'
-                    }`}
+        <>
+            <motion.header
+                initial={{ y: -30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 1, ease, delay: 0.2 }}
+                className="fixed inset-x-0 top-0 z-50 px-4 pt-4 md:px-6"
             >
-                <div className="flex items-center justify-between gap-4">
-                    {/* Brand Logo */}
-                    <a
-                        href="#hero"
-                        onClick={() => setActiveSection('#hero')}
-                        className="group flex items-center gap-2.5 focus:outline-none"
-                    >
-                        <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:bg-purple-500/25 group-hover:scale-105 transition-all duration-300">
-                            <Terminal size={17} />
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
-                                MSK
-                            </span>
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-                        </div>
+                <nav
+                    className={`mx-auto flex max-w-6xl items-center justify-between gap-4 rounded-full px-3 py-2 transition-all duration-700 ${
+                        scrolled ? 'card !rounded-full !bg-surface/70' : 'border border-transparent'
+                    }`}
+                >
+                    <a href="#hero" className="group flex items-center gap-2.5 pl-1" aria-label="Back to top">
+                        <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--accent)] font-display text-sm font-bold text-white">
+                            M
+                        </span>
+                        <span className="font-display text-lg font-bold tracking-tight text-fg">
+                            {PROFILE.short}
+                            <span className="text-accent-ink">.</span>
+                        </span>
                     </a>
 
-                    {/* Desktop Navigation Links */}
-                    <div className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                        {navLinks.map((link) => {
-                            const isActive = activeSection === link.href
-
+                    <div className="hidden items-center gap-0.5 rounded-full border border-line/[0.06] bg-fg/[0.03] p-1 lg:flex">
+                        {LINKS.map((l, i) => {
+                            const on = active === i + 1
                             return (
                                 <a
-                                    key={link.name}
-                                    href={link.href}
-                                    onClick={() => setActiveSection(link.href)}
-                                    className={`relative px-3.5 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-colors duration-200 ${isActive
-                                            ? 'text-white'
-                                            : 'text-gray-400 hover:text-gray-200'
-                                        }`}
+                                    key={l.id}
+                                    href={`#${l.id}`}
+                                    className={`relative rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-300 ${
+                                        on ? 'text-white' : 'text-muted hover:text-fg'
+                                    }`}
                                 >
-                                    {isActive && (
+                                    {on && (
                                         <motion.span
-                                            layoutId="activeNavPill"
-                                            transition={{
-                                                type: 'spring',
-                                                stiffness: 380,
-                                                damping: 30,
-                                            }}
-                                            className="absolute inset-0 rounded-lg bg-purple-600/85 shadow-md shadow-purple-600/30 -z-10"
+                                            layoutId="nav-pill"
+                                            className="absolute inset-0 -z-10 rounded-full"
+                                            style={{ background: 'var(--accent)', boxShadow: '0 6px 24px -6px var(--accent)' }}
+                                            transition={{ type: 'spring', stiffness: 260, damping: 30 }}
                                         />
                                     )}
-                                    {link.name}
+                                    {l.label}
                                 </a>
                             )
                         })}
                     </div>
 
-                    {/* Right Actions: Theme Toggle & Mobile Trigger */}
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={toggleTheme}
-                            aria-label="Toggle theme"
-                            className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-purple-500/20 border border-white/[0.08] hover:border-purple-500/35 text-gray-200 hover:text-purple-300 transition-all duration-200 cursor-pointer"
+                            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+                            className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-line/10 text-fg/80 transition-colors duration-300 hover:bg-fg/5"
                         >
-                            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+                            <AnimatePresence mode="wait" initial={false}>
+                                <motion.span
+                                    key={theme}
+                                    initial={{ y: 16, rotate: -90, opacity: 0 }}
+                                    animate={{ y: 0, rotate: 0, opacity: 1 }}
+                                    exit={{ y: -16, rotate: 90, opacity: 0 }}
+                                    transition={{ duration: 0.4, ease }}
+                                >
+                                    {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+                                </motion.span>
+                            </AnimatePresence>
                         </button>
-
-                        {/* Mobile Menu Button */}
+                        <a href="#contact" className="btn-primary hidden !px-5 !py-2.5 sm:inline-flex">
+                            Hire me <ArrowUpRight size={15} />
+                        </a>
                         <button
-                            aria-label="Toggle menu"
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="md:hidden p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/[0.08] text-white transition-colors cursor-pointer"
+                            onClick={() => setOpen(true)}
+                            aria-label="Open menu"
+                            className="flex h-10 w-10 items-center justify-center rounded-full border border-line/10 text-fg lg:hidden"
                         >
-                            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                            <Menu size={19} />
                         </button>
                     </div>
-                </div>
+                </nav>
+            </motion.header>
 
-                {/* Animated Mobile Menu */}
-                <AnimatePresence>
-                    {isMobileMenuOpen && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0, y: -8 }}
-                            animate={{ opacity: 1, height: 'auto', y: 0 }}
-                            exit={{ opacity: 0, height: 0, y: -8 }}
-                            transition={{ duration: 0.25, ease: 'easeInOut' }}
-                            className="md:hidden overflow-hidden"
-                        >
-                            <div className="mt-4 pt-4 border-t border-white/[0.08] space-y-1.5">
-                                {navLinks.map((link) => {
-                                    const isActive = activeSection === link.href
-
-                                    return (
-                                        <a
-                                            key={link.name}
-                                            href={link.href}
-                                            onClick={() => {
-                                                setActiveSection(link.href)
-                                                setIsMobileMenuOpen(false)
-                                            }}
-                                            className={`flex items-center justify-between py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 ${isActive
-                                                    ? 'bg-purple-600/25 text-white border border-purple-500/35'
-                                                    : 'text-gray-300 hover:text-white hover:bg-white/[0.05]'
-                                                }`}
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        initial={{ clipPath: 'circle(0% at calc(100% - 40px) 40px)' }}
+                        animate={{ clipPath: 'circle(150% at calc(100% - 40px) 40px)' }}
+                        exit={{ clipPath: 'circle(0% at calc(100% - 40px) 40px)' }}
+                        transition={{ duration: 0.8, ease }}
+                        className="fixed inset-0 z-[80] flex flex-col bg-bg/95 px-6 pb-10 pt-6 backdrop-blur-2xl lg:hidden"
+                    >
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => setOpen(false)}
+                                aria-label="Close menu"
+                                className="flex h-11 w-11 items-center justify-center rounded-full border border-line/10 text-fg"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <ul className="mt-10 flex flex-1 flex-col justify-center gap-2">
+                            {CHAPTERS.map((c, i) => (
+                                <motion.li
+                                    key={c.id}
+                                    initial={{ opacity: 0, x: 30 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.6, ease, delay: 0.15 + i * 0.05 }}
+                                >
+                                    <a
+                                        href={`#${c.id}`}
+                                        onClick={() => setOpen(false)}
+                                        className="group flex items-baseline gap-4 py-2"
+                                    >
+                                        <span className="font-mono text-xs" style={{ color: c.accent }}>
+                                            {String(i + 1).padStart(2, '0')}
+                                        </span>
+                                        <span
+                                            className={`font-display text-4xl font-bold tracking-tight transition-colors ${
+                                                active === i ? 'text-fg' : 'text-fg/40 group-hover:text-fg'
+                                            }`}
                                         >
-                                            <span>{link.name}</span>
-                                            <ArrowUpRight
-                                                size={15}
-                                                className={
-                                                    isActive
-                                                        ? 'text-purple-400'
-                                                        : 'text-gray-500'
-                                                }
-                                            />
-                                        </a>
-                                    )
-                                })}
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </nav>
-        </header>
+                                            {c.label}
+                                        </span>
+                                    </a>
+                                </motion.li>
+                            ))}
+                        </ul>
+                        <p className="font-mono text-xs text-muted">{PROFILE.email}</p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </>
     )
 }
-
-export default Navbar

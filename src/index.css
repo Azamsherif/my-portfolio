@@ -2,383 +2,184 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Inter', sans-serif;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
-  color: #ffffff;
-  overflow-x: hidden;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-/* Glassmorphism utility (dark theme) */
-.glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: #1a1a2e;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #764ba2;
-}
-
-/* Floating animation for hero image */
-.floating {
-  animation: float 4s ease-in-out infinite;
-}
-
-.neon-btn {
-  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
-  color: #031019;
-  box-shadow: 0 6px 30px rgba(var(--bright-aqua-rgb), 0.12), 0 0 30px rgba(var(--neon-cyan-rgb), 0.08);
-}
-
-/* Freelancer platform button style */
-.freelance-btn {
-  background: linear-gradient(90deg, rgba(var(--bright-aqua-rgb),0.12), rgba(var(--neon-cyan-rgb),0.08));
-  color: #e6eef6;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-  border: 1px solid rgba(255,255,255,0.04);
-}
-.freelance-btn:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(var(--bright-aqua-rgb), 0.18), 0 6px 30px rgba(var(--neon-cyan-rgb), 0.08);
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  color: #071322;
-}
-
-.logo-placeholder {
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border: 1px solid rgba(255,255,255,0.04);
-  color: #cbd5e1;
-  font-weight: 600;
+/* The chapter accent animates smoothly when the active chapter changes. */
+@property --accent {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #4f6ef7;
 }
 
 :root {
-  /* Palette (faint -> vivid) defined as RGB tuples for easy rgba usage */
-  --deep-navy-rgb: 7,19,34;      /* #071322 */
-  --dark-teal-rgb: 11,43,58;     /* #0B2B3A */
-  --teal-slate-rgb: 15,70,86;    /* #0F4656 */
-  --teal-rgb: 0,109,100;         /* #006D64 */
-  --cyan-teal-rgb: 0,179,167;    /* #00B3A7 */
-  --bright-aqua-rgb: 0,245,160;  /* #00F5A0 */
-  --neon-cyan-rgb: 0,212,255;    /* #00D4FF */
-
-  /* Hex fallbacks / convenience vars */
-  --accent: #00F5A0;    /* bright aqua */
-  --accent-2: #00D4FF;  /* neon cyan */
+    --bg: 10 10 12;
+    --surface: 22 22 26;
+    --fg: 236 236 240;
+    --muted: 150 150 160;
+    --line: 255 255 255;
+    --accent: #4f6ef7;
+    --accent-ink: color-mix(in srgb, var(--accent) 70%, white);
+    --grid: rgba(255, 255, 255, 0.035);
+    color-scheme: dark;
+    transition: --accent 0.9s ease;
 }
 
-/* Light theme overrides (add `.light` to html element) */
-html.light {
-  /* brighter/more saturated accents for light theme to keep visibility */
-  --deep-navy-rgb: 245,247,250;
-  --dark-teal-rgb: 200,220,222;
-  --teal-slate-rgb: 170,200,205;
-  --teal-rgb: 0,120,105;
-  --cyan-teal-rgb: 0,165,150;
-  --bright-aqua-rgb: 0,200,140;   /* stronger than earlier light values */
-  --neon-cyan-rgb: 0,185,255;     /* visible neon */
-
-  --accent: #00C37A;
-  --accent-2: #00B3FF;
-
-  /* Light background for body via html.light */
+:root.light {
+    --bg: 250 250 250;
+    --surface: 255 255 255;
+    --fg: 24 24 27;
+    --muted: 95 95 105;
+    --line: 24 24 27;
+    --accent-ink: color-mix(in srgb, var(--accent) 85%, black);
+    --grid: rgba(18, 18, 32, 0.05);
+    color-scheme: light;
 }
 
-html.light body {
-  background: linear-gradient(135deg, #f6f9fb 0%, #e9f0f2 100%);
-  color: #071322;
+html {
+    position: relative; /* framer-motion measures scroll targets against this */
+    background: rgb(var(--bg));
+}
+html.lenis,
+html.lenis body {
+    height: auto;
+}
+.lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
 }
 
-/* Overrides to improve contrast/visibility in light theme */
-html.light .nav-link {
-  color: #12343a; /* darker text for nav */
-}
-html.light .nav-link:hover {
-  color: #071322;
-  background: rgba(var(--bright-aqua-rgb), 0.14); /* stronger hover */
-  box-shadow: 0 10px 40px rgba(var(--bright-aqua-rgb), 0.14);
-}
-html.light .nav-link-mobile:hover {
-  background: rgba(var(--bright-aqua-rgb), 0.12);
-  color: #071322;
+body {
+    @apply font-sans antialiased;
+    background: rgb(var(--bg));
+    color: rgb(var(--fg));
+    overflow-x: hidden;
+    transition: background-color 0.5s ease, color 0.5s ease;
 }
 
-html.light .glass {
-  background: rgba(255,255,255,0.88);
-  backdrop-filter: none;
-  border: 1px solid rgba(7,19,34,0.06);
-  color: #071322;
+::selection {
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
-html.light .logo-placeholder {
-  background: rgba(0,0,0,0.04);
-  border: 1px solid rgba(7,19,34,0.06);
-  color: #071322;
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 8px;
 }
 
-html.light .neon-btn {
-  color: #071322; /* dark text against bright gradient */
-  box-shadow: 0 12px 40px rgba(var(--bright-aqua-rgb), 0.2), 0 0 80px rgba(var(--neon-cyan-rgb), 0.12);
+@layer components {
+    .card {
+        @apply rounded-2xl border border-line/[0.08] bg-surface/70 backdrop-blur-xl;
+        box-shadow: 0 1px 0 0 rgb(var(--line) / 0.06) inset, 0 30px 60px -30px rgb(0 0 0 / 0.45);
+        transition: border-color 0.5s ease, background-color 0.5s ease;
+    }
+    :root.light .card {
+        box-shadow: 0 1px 0 0 rgb(255 255 255 / 0.8) inset, 0 24px 50px -28px rgb(40 30 90 / 0.18);
+    }
+    .card:hover {
+        border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+    }
+
+    .text-accent-ink {
+        color: var(--accent-ink);
+        transition: color 0.9s ease;
+    }
+    .bg-accent-soft {
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+    .border-accent-soft {
+        border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+
+    .text-aurora {
+        color: var(--accent-ink);
+    }
+
+    .btn-primary {
+        @apply relative inline-flex items-center gap-2 overflow-hidden rounded-full px-7 py-3.5 text-sm font-semibold text-white;
+        background: var(--accent);
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+    .btn-primary:hover {
+        background: color-mix(in srgb, var(--accent) 88%, black);
+    }
+
+    .btn-ghost {
+        @apply inline-flex items-center gap-2 rounded-full border border-line/15 bg-fg/[0.03] px-6 py-3.5 text-sm font-semibold text-fg backdrop-blur-md;
+        transition: border-color 0.4s ease, background-color 0.4s ease;
+    }
+    .btn-ghost:hover {
+        border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+        background: color-mix(in srgb, var(--accent) 10%, transparent);
+    }
 }
 
-/* Stronger, more saturated overrides to keep colors vivid in light theme */
-html.light {
-  /* push accents more vivid */
-  --bright-aqua-rgb: 0,220,140;   /* brighter green-aqua */
-  --neon-cyan-rgb: 0,195,255;     /* vivid cyan */
-  --accent: #00E38F;
-  --accent-2: #00C6FF;
+/* Ambient page backdrop (behind the 3D canvas). */
+.backdrop-grid {
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 75%);
+}
+.aurora-blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(140px);
+    opacity: 0.12;
+    will-change: transform;
+    animation: drift 24s ease-in-out infinite alternate;
+}
+:root.light .aurora-blob {
+    opacity: 0.08;
 }
 
-/* Make gradient text more visible on light background */
-html.light .gradient-text {
-  background: linear-gradient(135deg, #0ea5a3 0%, #06b6d4 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.marquee {
+    mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+}
+.marquee-track {
+    animation: marquee 40s linear infinite;
+}
+.marquee:hover .marquee-track {
+    animation-play-state: paused;
 }
 
-/* Hero-specific light theme overrides */
-html.light #hero h1 {
-  background: linear-gradient(90deg, rgba(var(--bright-aqua-rgb),1), rgba(var(--neon-cyan-rgb),1));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+@keyframes aurora-shift {
+    to {
+        background-position: 100% 50%;
+    }
 }
-html.light #hero p, html.light #hero .text-gray-400 {
-  color: #234b4b; /* darker body text in hero */
+@keyframes drift {
+    0% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(6vw, -4vh, 0) scale(1.12); }
+    100% { transform: translate3d(-4vw, 5vh, 0) scale(0.95); }
 }
-
-/* Make glass panels slightly tinted in light mode to separate content */
-html.light .glass {
-  background: rgba(255,255,255,0.92);
-  box-shadow: 0 6px 30px rgba(7,19,34,0.06);
+@keyframes marquee {
+    to { transform: translateX(-50%); }
 }
-
-/* Strengthen CTA visibility in light theme */
-html.light .neon-btn {
-  color: #071322;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  box-shadow: 0 18px 60px rgba(var(--bright-aqua-rgb), 0.25), 0 0 100px rgba(var(--neon-cyan-rgb), 0.18);
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.fade-in-slow {
+    animation: fade-in 2s ease forwards;
 }
 
-/* Ensure project cards / headings are visible */
-html.light .glass.p-8 {
-  background: rgba(255,255,255,0.94);
-  color: #071322;
-  border: 1px solid rgba(7,19,34,0.06);
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-track {
+    background: rgb(var(--bg));
+}
+::-webkit-scrollbar-thumb {
+    background: rgb(var(--muted) / 0.35);
+    border-radius: 10px;
+    border: 2px solid rgb(var(--bg));
 }
 
-/* Navbar link hover using bright accent */
-.nav-link {
-  color: #e6eef6;
-  transition: transform 200ms cubic-bezier(.2,.9,.2,1), box-shadow 200ms ease, background 200ms ease, color 200ms ease;
-  will-change: transform, box-shadow, background;
-}
-.nav-link:hover {
-  color: #071322;
-  background: linear-gradient(90deg, rgba(var(--accent-rgb, 0,245,160),1), rgba(var(--accent-2-rgb, 0,212,255),1));
-  box-shadow: 0 18px 60px rgba(var(--bright-aqua-rgb), 0.22), 0 8px 40px rgba(var(--neon-cyan-rgb), 0.10);
-  transform: translateY(-6px) scale(1.06);
-  border: 1px solid rgba(255,255,255,0.06);
-}
-
-/* Mobile menu link hover */
-.nav-link-mobile {
-  transition: transform 180ms cubic-bezier(.2,.9,.2,1), box-shadow 180ms ease, background 180ms ease, color 180ms ease;
-}
-.nav-link-mobile:hover {
-  background: linear-gradient(90deg, rgba(var(--accent),0.12), rgba(var(--accent-2),0.12));
-  color: #071322;
-  transform: translateY(-5px);
-  box-shadow: 0 12px 40px rgba(var(--bright-aqua-rgb), 0.16);
-  border: 1px solid rgba(255,255,255,0.04);
-}
-
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-}
-
-/* final logo placeholder tweak */
-.logo-placeholder {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.6);
-}
-
-/* Strong text color overrides for light theme to ensure readability */
-html.light, html.light body {
-  color: #071322; /* base text color */
-}
-
-/* Primary headings */
-html.light h1,
-html.light h2,
-html.light h3,
-html.light .gradient-text {
-  color: #071322 !important;
-}
-
-/* Paragraphs and secondary text */
-html.light p,
-html.light .text-base,
-html.light .text-sm,
-html.light .text-gray-400,
-html.light .text-gray-300,
-html.light .text-gray-200 {
-  color: #334155 !important; /* slate-700 for good contrast */
-}
-
-/* Ensure text inside glass panels is readable */
-html.light .glass p,
-html.light .glass span,
-html.light .glass li,
-html.light .glass div {
-  color: #334155 !important;
-}
-
-/* Links and small accents */
-html.light a {
-  color: rgb(var(--bright-aqua-rgb));
-}
-html.light a:hover {
-  color: rgb(var(--neon-cyan-rgb));
-}
-
-/* Project cards: darker text and visible borders */
-html.light .glass.p-8 {
-  color: #071322;
-  border: 1px solid rgba(7,19,34,0.06);
-}
-
-/* Experience section tweaks */
-#experience .glass {
-  padding: 2.5rem;
-}
-
-#experience .glass .glass {
-  background: rgba(255,255,255,0.9);
-}
-
-#experience .experience-list {
-  list-style: none;
-  padding-left: 0;
-}
-
-#experience .experience-list li {
-  align-items: flex-start;
-}
-
-#experience .experience-list .bullet {
-  color: rgb(var(--bright-aqua-rgb));
-  font-size: 1.1rem;
-  line-height: 1.1rem;
-  margin-top: 0.2rem;
-}
-
-#experience .experience-list li > div {
-  color: inherit;
-}
-
-/* Ensure strong labels are visible on light */
-html.light #experience strong {
-  color: #0f172a; /* slate-900 */
-}
-
-/* Make card title inside experience darker and well-spaced */
-#experience h3 {
-  margin-bottom: 0.25rem;
-}
-
-
-/* Make icons / meta text slightly darker */
-html.light .text-gray-500,
-html.light .text-gray-600 {
-  color: #475569 !important;
-}
-
-/* Footer tweaks to match reference: three-column layout visual niceties */
-.footer-link {
-  transition: color 180ms ease, transform 180ms ease, text-decoration-color 180ms ease;
-  color: inherit;
-  text-decoration: none;
-}
-.footer-link:hover {
-  color: var(--accent);
-  transform: translateY(-3px);
-  text-decoration: underline;
-  text-decoration-color: rgba(var(--bright-aqua-rgb),0.18);
-}
-
-footer {
-  background: transparent; /* inherit page background */
-}
-
-footer .container {
-  max-width: 1100px;
-}
-
-/* Footer responsive and spacing tweaks */
-.footer-summary {
-  max-width: 520px;
-  line-height: 1.4;
-  word-break: break-word;
-}
-
-@media (max-width: 768px) {
-  .footer-summary {
-    max-width: 100%;
-    font-size: 0.9rem;
-  }
-  footer .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  footer a.footer-link {
-    font-size: 0.95rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  footer .container {
-    max-width: 1200px;
-  }
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }

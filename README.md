@@ -4,19 +4,23 @@
 This is a personal portfolio website built with React, Vite and Tailwind CSS to showcase Mohamed Sherif Kamel’s CV, projects, skills and contact information. It is ready for local development and deployment (GitHub / Vercel).
 
 ## Features
-- Light / Dark theme with preference saved to `localStorage`
-- Hero section with circular profile image and clear CTA
-- Projects list with links to GitHub repositories
-- Sections: About, Skills, Experience, Education, Projects, Certifications, Languages, Contact, Footer
-- Smooth animations using Framer Motion
-- Icons via `lucide-react`
+- **Interactive 3D scene** (three.js / React Three Fiber): a morphing glass core with orbit rings and particles that glides to a new position and colour for each chapter and follows the mouse
+- **Guided tour**: the page is split into 7 numbered chapters, with a chapter rail, a bottom guide dock (where you are, what's here, Next/Previous), a "Take the guided tour" button, and a scroll progress bar
+- **Smooth, soft motion**: Lenis inertial scrolling, blur-in reveals, 3D tilt cards with cursor spotlight, magnetic buttons, soft cursor, animated counters, and a self-drawing experience timeline
+- Accent colour shifts per chapter across the UI and the 3D scene
+- Light / dark theme (saved to `localStorage`)
+- Projects: category filter, live search, and an animated case-study modal
+- Respects `prefers-reduced-motion`; the 3D scene is lazy-loaded and skipped when WebGL is unavailable
+
+## Editing content
+All text, links, projects, skills, and certifications live in [`src/data.js`](src/data.js). Edit that file; the sections update automatically.
 
 ## Tech Stack
 - React 18 + Vite
 - Tailwind CSS
-- Framer Motion
+- three.js, @react-three/fiber, @react-three/drei
+- Framer Motion, Lenis
 - lucide-react
-- Node.js & npm
 
 ## Local Setup
 1. Install dependencies

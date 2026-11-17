@@ -1,19 +1,21 @@
 /** @type {import('tailwindcss').Config} */
+const token = (v) => `rgb(var(--${v}) / <alpha-value>)`
+
 export default {
-    content: [
-        "./index.html",
-        "./src/**/*.{js,jsx}",
-    ],
+    content: ['./index.html', './src/**/*.{js,jsx}'],
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Inter', 'sans-serif'],
+                sans: ['Inter', 'system-ui', 'sans-serif'],
+                display: ['"Space Grotesk"', 'Inter', 'sans-serif'],
+                mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
             },
             colors: {
-                'dark-bg': '#0f0f23',
-                'dark-secondary': '#1a1a2e',
-                'brand-purple': '#667eea',
-                'brand-indigo': '#764ba2',
+                bg: token('bg'),
+                surface: token('surface'),
+                fg: token('fg'),
+                muted: token('muted'),
+                line: token('line'),
             },
         },
     },
