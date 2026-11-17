@@ -34,7 +34,7 @@ export const CHAPTERS = [
     { id: 'about', label: 'About', accent: ACCENT, hint: 'My background, my approach, and the principles I code by.' },
     { id: 'skills', label: 'Skills', accent: ACCENT, hint: 'The stack I work with, from SQL Server to the browser.' },
     { id: 'experience', label: 'Experience', accent: ACCENT, hint: 'Real client work: database architecture delivered on Khamsat.' },
-    { id: 'projects', label: 'Projects', accent: ACCENT, hint: 'Four builds. Filter, search, or open any case study.' },
+    { id: 'projects', label: 'Projects', accent: ACCENT, hint: 'Four builds — open any one for the details.' },
     { id: 'education', label: 'Education', accent: ACCENT, hint: 'Degree, intensive DEPI training, and certifications.' },
     { id: 'contact', label: 'Contact', accent: ACCENT, hint: 'Email, phone, or WhatsApp — I reply quickly.' },
 ]
@@ -98,11 +98,6 @@ export const TECH_SKILLS = [
     },
 ]
 
-export const MARQUEE = [
-    'C#', '.NET', 'ASP.NET Core', 'Web API', 'EF Core', 'LINQ', 'SQL Server', 'T-SQL',
-    'JWT', 'Swagger', 'Docker', 'Git', 'JavaScript', 'React', 'Node.js', 'MongoDB',
-    'Bootstrap', 'xUnit', 'Stripe', 'Clean Architecture',
-]
 
 export const PERSONAL_SKILLS = [
     { icon: 'Lightbulb', title: 'Problem-Solving', text: 'Breaking down complex problems into manageable solutions.' },

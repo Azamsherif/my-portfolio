@@ -9,7 +9,7 @@ import Projects from './components/Projects'
 import Education from './components/Education'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
-import { Backdrop, GuideDock, GuideRail, ScrollProgress } from './components/Guide'
+import { GuideDock, ScrollProgress } from './components/Guide'
 
 // three.js is heavy: load it after the page shell is interactive.
 const Scene = lazy(() => import('./components/three/Scene'))
@@ -40,7 +40,6 @@ export default function App() {
     return (
         <>
             <ScrollProgress />
-            <Backdrop />
             {has3D && (
                 <div aria-hidden className="fade-in-slow pointer-events-none fixed inset-0 z-0 opacity-0">
                     <SceneBoundary>
@@ -51,7 +50,6 @@ export default function App() {
                 </div>
             )}
             <Navbar />
-            <GuideRail />
             <main className="relative z-10">
                 <Hero />
                 <About />

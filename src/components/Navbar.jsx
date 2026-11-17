@@ -55,18 +55,12 @@ export default function Navbar() {
                 className="fixed inset-x-0 top-0 z-50 px-4 pt-4 md:px-6"
             >
                 <nav
-                    className={`mx-auto flex max-w-6xl items-center justify-between gap-4 rounded-full px-3 py-2 transition-all duration-700 ${
+                    className={`mx-auto flex max-w-5xl items-center justify-between gap-4 rounded-full px-3 py-2 transition-all duration-700 ${
                         scrolled ? 'card !rounded-full !bg-surface/70' : 'border border-transparent'
                     }`}
                 >
                     <a href="#hero" className="group flex items-center gap-2.5 pl-1" aria-label="Back to top">
-                        <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--accent)] font-display text-sm font-bold text-white">
-                            M
-                        </span>
-                        <span className="font-display text-lg font-bold tracking-tight text-fg">
-                            {PROFILE.short}
-                            <span className="text-accent-ink">.</span>
-                        </span>
+                        <span className="text-base font-semibold tracking-tight text-fg">{PROFILE.name}</span>
                     </a>
 
                     <div className="hidden items-center gap-0.5 rounded-full border border-line/[0.06] bg-fg/[0.03] p-1 lg:flex">
@@ -84,7 +78,7 @@ export default function Navbar() {
                                         <motion.span
                                             layoutId="nav-pill"
                                             className="absolute inset-0 -z-10 rounded-full"
-                                            style={{ background: 'var(--accent)', boxShadow: '0 6px 24px -6px var(--accent)' }}
+                                            style={{ background: 'var(--accent)' }}
                                             transition={{ type: 'spring', stiffness: 260, damping: 30 }}
                                         />
                                     )}

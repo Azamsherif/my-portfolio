@@ -1,30 +1,113 @@
-import React, { useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Float, MeshDistortMaterial, Sparkles } from '@react-three/drei'
+import { Float } from '@react-three/drei'
 import * as THREE from 'three'
-import { ACCENT } from '../../data'
 import { scrollState, prefersReducedMotion } from '../../lib/scroll'
 
 const { damp, smoothstep, lerp } = THREE.MathUtils
 
 // Resting pose for each chapter, as fractions of the visible viewport.
-// The core alternates sides so every chapter change is a visible journey.
-// x/y: offset from centre, s: scale, o: opacity, d: surface distortion,
-// form: which wireframe cage surrounds it, tilt: ring orientation.
+// The balloon alternates sides so every chapter change is a visible journey.
+// x/y: offset from centre, s: scale, o: opacity, tilt: galaxy tilt [x, z].
 const POSES = [
-    { x: 0.26, y: 0.02, s: 1.15, o: 1, d: 0.3, form: 0, tilt: [1.3, 0.2] }, // Intro
-    { x: 0.46, y: 0.22, s: 0.72, o: 0.45, d: 0.22, form: 1, tilt: [0.4, 0.9] }, // About
-    { x: -0.46, y: -0.24, s: 0.68, o: 0.4, d: 0.4, form: 2, tilt: [1.9, -0.4] }, // Skills
-    { x: 0.46, y: 0.22, s: 0.72, o: 0.42, d: 0.28, form: 0, tilt: [0.8, -0.8] }, // Experience
-    { x: -0.46, y: -0.24, s: 0.66, o: 0.4, d: 0.45, form: 1, tilt: [1.5, 0.6] }, // Projects
-    { x: 0.46, y: 0.22, s: 0.72, o: 0.42, d: 0.26, form: 2, tilt: [0.3, 0.3] }, // Education
-    { x: 0.34, y: 0.16, s: 0.9, o: 0.65, d: 0.34, form: 0, tilt: [1.2, -0.2] }, // Contact
+    { x: 0.3, y: 0.0, s: 1.05, o: 1, tilt: [0.95, 0.3] }, // Intro
+    { x: 0.5, y: 0.22, s: 0.85, o: 0.6, tilt: [1.2, -0.3] }, // About
+    { x: -0.5, y: -0.24, s: 0.8, o: 0.55, tilt: [0.75, 0.5] }, // Skills
+    { x: 0.5, y: 0.22, s: 0.85, o: 0.6, tilt: [1.0, 0.1] }, // Experience
+    { x: -0.5, y: -0.24, s: 0.8, o: 0.55, tilt: [1.3, -0.4] }, // Projects
+    { x: 0.5, y: 0.22, s: 0.85, o: 0.6, tilt: [0.8, -0.2] }, // Education
+    { x: 0.44, y: 0.22, s: 0.9, o: 0.65, tilt: [0.9, 0.3] }, // Contact
 ]
 
+// Theme-aware palette for the galaxy (core → arm tips), the glass shell and the star field.
+const PALETTE = {
+    dark: { core: '#fff4e0', arm: '#4f6ef7', edge: '#9b7bff', shell: '#8aa0ff', stars: '#e5e7ff', ring: '#475569' },
+    light: { core: '#1b2563', arm: '#4f6ef7', edge: '#7c5cf0', shell: '#4f6ef7', stars: '#64748b', ring: '#cbd5e1' },
+}
+
 const reduced = prefersReducedMotion()
-// A softer, slightly desaturated tone of the brand accent for the 3D material.
-const CORE = '#5468c9'
-const WIRE = '#9ca3af'
+const theme = { light: false }
+
+// ---------- Galaxy geometry (built once) ----------
+const GALAXY = (() => {
+    const count = typeof window !== 'undefined' && window.innerWidth < 768 ? 3500 : 7000
+    const branches = 4
+    const spin = 1.6
+    const radius = 0.92
+    const positions = new Float32Array(count * 3)
+    const mix = new Float32Array(count) // 0 at the core → 1 at the arm tips
+    for (let i = 0; i < count; i++) {
+        const r = Math.pow(Math.random(), 1.6) * radius
+        const branch = ((i % branches) / branches) * Math.PI * 2
+        const angle = branch + r * spin * Math.PI
+        const spread = 0.22 * (1 - r / radius) + 0.05
+        const rx = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * spread
+        const ry = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * spread * 0.45
+        const rz = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * spread
+        positions[i * 3] = Math.cos(angle) * r + rx
+        positions[i * 3 + 1] = ry
+        positions[i * 3 + 2] = Math.sin(angle) * r + rz
+        mix[i] = r / radius
+    }
+    return { count, positions, mix }
+})()
+
+function galaxyColors(pal) {
+    const core = new THREE.Color(pal.core)
+    const arm = new THREE.Color(pal.arm)
+    const edge = new THREE.Color(pal.edge)
+    const out = new Float32Array(GALAXY.count * 3)
+    const c = new THREE.Color()
+    for (let i = 0; i < GALAXY.count; i++) {
+        const t = GALAXY.mix[i]
+        if (t < 0.35) c.copy(core).lerp(arm, t / 0.35)
+        else c.copy(arm).lerp(edge, (t - 0.35) / 0.65)
+        out[i * 3] = c.r
+        out[i * 3 + 1] = c.g
+        out[i * 3 + 2] = c.b
+    }
+    return out
+}
+const COLORS = { dark: galaxyColors(PALETTE.dark), light: galaxyColors(PALETTE.light) }
+
+// Soft round sprite so stars are dots, not squares.
+const DOT = (() => {
+    if (typeof document === 'undefined') return null
+    const size = 64
+    const cv = document.createElement('canvas')
+    cv.width = cv.height = size
+    const ctx = cv.getContext('2d')
+    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+    g.addColorStop(0, 'rgba(255,255,255,1)')
+    g.addColorStop(0.35, 'rgba(255,255,255,0.8)')
+    g.addColorStop(1, 'rgba(255,255,255,0)')
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, size, size)
+    return new THREE.CanvasTexture(cv)
+})()
+
+// Glass balloon: transparent in the middle, glowing at the rim (Fresnel).
+const shellVertex = /* glsl */ `
+    varying vec3 vNormal;
+    varying vec3 vView;
+    void main() {
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vNormal = normalize(normalMatrix * normal);
+        vView = normalize(-mv.xyz);
+        gl_Position = projectionMatrix * mv;
+    }
+`
+const shellFragment = /* glsl */ `
+    uniform vec3 uColor;
+    uniform float uOpacity;
+    varying vec3 vNormal;
+    varying vec3 vView;
+    void main() {
+        float rim = pow(1.0 - max(dot(vNormal, vView), 0.0), 2.6);
+        float sheen = pow(max(dot(reflect(-vView, vNormal), normalize(vec3(-0.4, 0.7, 0.6))), 0.0), 90.0);
+        gl_FragColor = vec4(uColor, (rim * 0.9 + sheen * 0.35 + 0.03) * uOpacity);
+    }
+`
 
 function CameraRig() {
     const { camera, pointer } = useThree()
@@ -40,25 +123,27 @@ function CameraRig() {
 function place(i, viewport, mobile) {
     const p = POSES[Math.min(i, POSES.length - 1)]
     return {
-        x: mobile ? Math.sign(p.x) * 0.4 * viewport.width : p.x * viewport.width,
+        x: mobile ? Math.sign(p.x) * 0.42 * viewport.width : p.x * viewport.width,
         y: mobile ? 0.3 * viewport.height : p.y * viewport.height,
-        s: mobile ? (i === 0 ? 0.62 : 0.5) : p.s,
-        o: mobile ? Math.min(p.o, 0.55) : p.o,
-        d: p.d,
+        s: mobile ? (i === 0 ? 0.8 : 0.6) : p.s,
+        o: mobile ? Math.min(p.o, i === 0 ? 0.75 : 0.45) : p.o,
     }
 }
 
-function Core() {
+function UniverseBalloon() {
     const group = useRef()
-    const spinner = useRef()
-    const mat = useRef()
-    const cages = useRef([])
-    const rings = useRef()
-    const ringA = useRef()
-    const ringB = useRef()
-    const moons = useRef()
-    const motion = useRef({ last: 0, spin: 0, pulse: 0 })
+    const galaxy = useRef()
+    const galaxyGeo = useRef()
+    const galaxyMat = useRef()
+    const shell = useRef()
+    const ring = useRef()
+    const motion = useRef({ last: 0, spin: 0, pulse: 0, light: null })
     const { viewport, size } = useThree()
+    const tmp = useMemo(() => new THREE.Color(), [])
+    const shellUniforms = useMemo(
+        () => ({ uColor: { value: new THREE.Color(PALETTE.dark.shell) }, uOpacity: { value: 1 } }),
+        []
+    )
 
     useFrame((state, dt) => {
         const t = state.clock.elapsedTime
@@ -66,131 +151,146 @@ function Core() {
         const mobile = size.width < 768
         const i = scrollState.index
         const next = Math.min(i + 1, POSES.length - 1)
+        const pal = theme.light ? PALETTE.light : PALETTE.dark
+        const k = 1 - Math.exp(-4 * dt)
 
-        // Rest for most of a chapter, then travel to the next one during its final stretch.
+        // Swap galaxy colours and blending when the theme changes.
+        if (m.light !== theme.light) {
+            m.light = theme.light
+            galaxyGeo.current.attributes.color.array.set(theme.light ? COLORS.light : COLORS.dark)
+            galaxyGeo.current.attributes.color.needsUpdate = true
+            galaxyMat.current.blending = theme.light ? THREE.NormalBlending : THREE.AdditiveBlending
+            galaxyMat.current.needsUpdate = true
+            shell.current.material.blending = theme.light ? THREE.NormalBlending : THREE.AdditiveBlending
+            shell.current.material.needsUpdate = true
+        }
+
+        // Rest for most of a chapter, then float to the next one during its final stretch.
         const travel = reduced ? 0 : smoothstep(scrollState.progress, 0.6, 1)
         const a = place(i, viewport, mobile)
         const b = place(next, viewport, mobile)
-        const arc = Math.sin(Math.PI * travel) // 0 → 1 → 0 across the journey
-
-        // Gentle idle drift so the core never feels frozen.
-        const driftX = reduced ? 0 : Math.sin(t * 0.35) * 0.025 * viewport.width
-        const driftY = reduced ? 0 : Math.cos(t * 0.42) * 0.025 * viewport.height
-
-        const tx = lerp(a.x, b.x, travel) + driftX
-        const ty = lerp(a.y, b.y, travel) + arc * 0.12 * viewport.height + driftY
-        const tz = -arc * 1.6 // dips back in depth mid-journey
-        const ts = lerp(a.s, b.s, travel) * (1 - arc * 0.18)
-        const to = lerp(a.o, b.o, travel) * (1 - arc * 0.45)
+        const arc = Math.sin(Math.PI * travel)
+        const bob = reduced ? 0 : Math.sin(t * 0.8) * 0.015 * viewport.height
 
         const g = group.current
-        g.position.x = damp(g.position.x, tx, 2.2, dt)
-        g.position.y = damp(g.position.y, ty, 2.2, dt)
-        g.position.z = damp(g.position.z, tz, 2.2, dt)
-        g.scale.setScalar(damp(g.scale.x, ts, 2.2, dt))
+        g.position.x = damp(g.position.x, lerp(a.x, b.x, travel) + Math.sin(t * 0.3) * 0.015 * viewport.width, 2, dt)
+        g.position.y = damp(g.position.y, lerp(a.y, b.y, travel) + arc * 0.14 * viewport.height + bob, 2, dt)
+        g.position.z = damp(g.position.z, -arc * 1.4, 2, dt)
+        g.scale.setScalar(damp(g.scale.x, lerp(a.s, b.s, travel) * (1 - arc * 0.15), 2, dt))
+        const o = lerp(a.o, b.o, travel) * (1 - arc * 0.35)
 
-        // Chapter change: queue a half-turn and a short energy pulse.
+        // Chapter change: the galaxy whirls faster for a moment.
         if (i !== m.last) {
-            m.spin += Math.PI * (i > m.last ? 1 : -1)
             m.pulse = 1
             m.last = i
         }
-        m.pulse = damp(m.pulse, 0, 1.6, dt)
-        m.spin += dt * (reduced ? 0.03 : 0.14)
-        const v = Math.min(Math.abs(scrollState.velocity), 40) * 0.004
-        const s = spinner.current
-        s.rotation.y = damp(s.rotation.y, m.spin + travel * Math.PI * 0.5, 2.4, dt)
-        s.rotation.x = damp(s.rotation.x, state.pointer.y * -0.25 + arc * 0.4, 2, dt)
-        s.rotation.z = damp(s.rotation.z, arc * 0.25, 2, dt)
+        m.pulse = damp(m.pulse, 0, 1.4, dt)
+        m.spin += dt * ((reduced ? 0.04 : 0.18) + m.pulse * 1.6 + arc * 0.6)
+        galaxy.current.rotation.y = m.spin
 
-        mat.current.opacity = damp(mat.current.opacity, to, 2, dt)
-        mat.current.distort = damp(mat.current.distort, lerp(a.d, b.d, travel) + m.pulse * 0.25 + v * 2, 3, dt)
-
-        // Morph between wireframe cages.
-        const form = POSES[travel > 0.5 ? next : i].form
-        cages.current.forEach((c, k) => {
-            if (!c) return
-            const on = k === form
-            c.material.opacity = damp(c.material.opacity, on ? to * 0.35 : 0, 3, dt)
-            c.scale.setScalar(damp(c.scale.x, on ? 1.42 + m.pulse * 0.15 : 0.9, 3, dt))
-            c.rotation.x -= dt * 0.08
-            c.rotation.z += dt * 0.05
-        })
-
-        // Rings re-orient per chapter and swing wider during transit.
+        // Tilt the galaxy disc per chapter, plus a little mouse response.
         const tilt = POSES[travel > 0.5 ? next : i].tilt
-        const r = rings.current
-        r.rotation.x = damp(r.rotation.x, tilt[0], 1.8, dt)
-        r.rotation.y = damp(r.rotation.y, tilt[1], 1.8, dt)
-        r.scale.setScalar(damp(r.scale.x, 1 + arc * 0.15 + m.pulse * 0.1, 3, dt))
-        ringA.current.rotation.z += dt * (0.2 + m.pulse)
-        ringB.current.rotation.z -= dt * (0.14 + m.pulse * 0.6)
-        ringA.current.material.opacity = ringB.current.material.opacity = to * 0.5
+        galaxy.current.rotation.x = damp(galaxy.current.rotation.x, tilt[0] + state.pointer.y * -0.2, 1.6, dt)
+        galaxy.current.rotation.z = damp(galaxy.current.rotation.z, tilt[1] + state.pointer.x * 0.15, 1.6, dt)
 
-        moons.current.rotation.y += dt * (0.45 + m.pulse * 2 + arc)
+        galaxyMat.current.opacity = damp(galaxyMat.current.opacity, o * (theme.light ? 0.85 : 1), 3, dt)
+        galaxyMat.current.size = (mobile ? 0.03 : 0.026) * (1 + m.pulse * 0.25)
+
+        // Balloon breathes slightly and swells on a chapter change.
+        shell.current.scale.setScalar(1 + Math.sin(t * 1.2) * 0.012 + m.pulse * 0.05)
+        shellUniforms.uColor.value.lerp(tmp.set(pal.shell), k)
+        shellUniforms.uOpacity.value = damp(shellUniforms.uOpacity.value, o * (theme.light ? 0.55 : 0.9), 3, dt)
+
+        ring.current.rotation.z += dt * (0.12 + m.pulse * 0.6)
+        ring.current.material.color.lerp(tmp.set(pal.ring), k)
+        ring.current.material.opacity = o * 0.5
     })
 
     return (
         <group ref={group}>
-            <Float speed={reduced ? 0 : 1.2} rotationIntensity={0.25} floatIntensity={0.7}>
-                <group ref={spinner}>
-                    <mesh>
-                        <icosahedronGeometry args={[1, 40]} />
-                        <MeshDistortMaterial
-                            ref={mat}
-                            color={CORE}
-                            distort={0.3}
-                            speed={reduced ? 0.3 : 1.6}
-                            roughness={0.32}
-                            metalness={0.25}
-                            clearcoat={1}
-                            clearcoatRoughness={0.15}
-                            transparent
-                            opacity={1}
-                        />
-                    </mesh>
+            <Float speed={reduced ? 0 : 1} rotationIntensity={0.15} floatIntensity={0.5}>
+                <points ref={galaxy}>
+                    <bufferGeometry ref={galaxyGeo}>
+                        <bufferAttribute attach="attributes-position" args={[GALAXY.positions, 3]} />
+                        <bufferAttribute attach="attributes-color" args={[COLORS.dark.slice(), 3]} />
+                    </bufferGeometry>
+                    <pointsMaterial
+                        ref={galaxyMat}
+                        size={0.026}
+                        sizeAttenuation
+                        vertexColors
+                        map={DOT}
+                        transparent
+                        depthWrite={false}
+                        blending={THREE.AdditiveBlending}
+                    />
+                </points>
 
-                    {[
-                        <icosahedronGeometry key="i" args={[1, 1]} />,
-                        <octahedronGeometry key="o" args={[1.15, 0]} />,
-                        <dodecahedronGeometry key="d" args={[1, 0]} />,
-                    ].map((geo, k) => (
-                        <mesh key={k} ref={(el) => (cages.current[k] = el)} scale={k === 0 ? 1.42 : 0.9}>
-                            {geo}
-                            <meshBasicMaterial wireframe transparent opacity={k === 0 ? 0.35 : 0} color={WIRE} />
-                        </mesh>
-                    ))}
-                </group>
+                <mesh ref={shell}>
+                    <sphereGeometry args={[1.08, 64, 64]} />
+                    <shaderMaterial
+                        vertexShader={shellVertex}
+                        fragmentShader={shellFragment}
+                        uniforms={shellUniforms}
+                        transparent
+                        depthWrite={false}
+                        blending={THREE.AdditiveBlending}
+                    />
+                </mesh>
 
-                <group ref={rings} rotation={[POSES[0].tilt[0], POSES[0].tilt[1], 0]}>
-                    <mesh ref={ringA}>
-                        <torusGeometry args={[1.95, 0.008, 12, 200]} />
-                        <meshBasicMaterial color={WIRE} transparent opacity={0.5} />
-                    </mesh>
-                    <mesh ref={ringB} rotation={[0.5, 0.4, 0]}>
-                        <torusGeometry args={[2.35, 0.006, 12, 200]} />
-                        <meshBasicMaterial color={WIRE} transparent opacity={0.5} />
-                    </mesh>
-                </group>
-
-                <group ref={moons} rotation={[0.4, 0, 0.2]}>
-                    {[0, 2.1, 4.2].map((ang, k) => (
-                        <mesh key={k} position={[Math.cos(ang) * 2.1, Math.sin(ang) * 0.3, Math.sin(ang) * 2.1]}>
-                            <sphereGeometry args={[0.05 + k * 0.015, 24, 24]} />
-                            <meshStandardMaterial
-                                color={k === 0 ? ACCENT : '#e5e7eb'}
-                                emissive={k === 0 ? ACCENT : '#e5e7eb'}
-                                emissiveIntensity={0.6}
-                            />
-                        </mesh>
-                    ))}
-                </group>
+                <mesh ref={ring} rotation={[1.25, 0.15, 0]}>
+                    <torusGeometry args={[1.45, 0.004, 8, 200]} />
+                    <meshBasicMaterial color={PALETTE.dark.ring} transparent opacity={0.5} />
+                </mesh>
             </Float>
         </group>
     )
 }
 
+/** Distant star field around the whole scene. */
+function StarField() {
+    const ref = useRef()
+    const positions = useMemo(() => {
+        const n = 900
+        const arr = new Float32Array(n * 3)
+        for (let i = 0; i < n; i++) {
+            const r = 6 + Math.random() * 10
+            const th = Math.random() * Math.PI * 2
+            const ph = Math.acos(2 * Math.random() - 1)
+            arr[i * 3] = r * Math.sin(ph) * Math.cos(th)
+            arr[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th)
+            arr[i * 3 + 2] = r * Math.cos(ph) - 6
+        }
+        return arr
+    }, [])
+    const tmp = useMemo(() => new THREE.Color(), [])
+    useFrame((_, dt) => {
+        ref.current.rotation.y += dt * (reduced ? 0.002 : 0.01)
+        const mat = ref.current.material
+        mat.color.lerp(tmp.set(theme.light ? PALETTE.light.stars : PALETTE.dark.stars), 1 - Math.exp(-4 * dt))
+        mat.opacity = theme.light ? 0.35 : 0.7
+    })
+    return (
+        <points ref={ref}>
+            <bufferGeometry>
+                <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+            </bufferGeometry>
+            <pointsMaterial size={0.05} sizeAttenuation map={DOT} transparent depthWrite={false} color={PALETTE.dark.stars} />
+        </points>
+    )
+}
+
 export default function Scene() {
+    // Follow the site's light/dark class on <html>.
+    useEffect(() => {
+        const root = document.documentElement
+        const sync = () => (theme.light = root.classList.contains('light'))
+        sync()
+        const obs = new MutationObserver(sync)
+        obs.observe(root, { attributes: true, attributeFilter: ['class'] })
+        return () => obs.disconnect()
+    }, [])
+
     return (
         <Canvas
             dpr={[1, 1.75]}
@@ -199,12 +299,8 @@ export default function Scene() {
             eventSource={document.getElementById('root')}
             eventPrefix="client"
         >
-            <ambientLight intensity={0.55} />
-            <directionalLight position={[4, 5, 5]} intensity={1.6} />
-            <pointLight position={[-4, -2, 3]} intensity={18} color="#ffffff" />
-            <pointLight position={[4, -3, 2]} intensity={10} color="#dbe2ff" />
-            <Core />
-            <Sparkles count={50} scale={[14, 9, 6]} size={1.6} speed={reduced ? 0 : 0.3} opacity={0.35} color="#d1d5db" />
+            <UniverseBalloon />
+            <StarField />
             <CameraRig />
         </Canvas>
     )

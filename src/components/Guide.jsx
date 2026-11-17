@@ -5,8 +5,6 @@ import { CHAPTERS } from '../data'
 import { useActiveChapter, goToChapter } from '../lib/scroll'
 import { ease } from './ui'
 
-const pad = (n) => String(n).padStart(2, '0')
-
 /** Thin gradient bar showing overall reading progress. */
 export function ScrollProgress() {
     const { scrollYProgress } = useScroll()
@@ -17,68 +15,6 @@ export function ScrollProgress() {
             style={{ scaleX }}
             className="fixed inset-x-0 top-0 z-[60] h-[3px] origin-left bg-[var(--accent)]"
         />
-    )
-}
-
-/** Vertical chapter rail on the left edge (desktop). */
-export function GuideRail() {
-    const active = useActiveChapter()
-    const [hover, setHover] = useState(-1)
-    const fill = active / (CHAPTERS.length - 1)
-
-    return (
-        <nav
-            aria-label="Chapters"
-            className="fixed left-6 top-1/2 z-40 hidden -translate-y-1/2 xl:block"
-        >
-            <div className="relative flex flex-col gap-5 py-1">
-                <span className="absolute left-[5px] top-2 bottom-2 w-px bg-line/10" />
-                <motion.span
-                    className="absolute left-[5px] top-2 w-px origin-top bg-[var(--accent)]"
-                    style={{ height: 'calc(100% - 16px)' }}
-                    animate={{ scaleY: fill }}
-                    transition={{ duration: 0.9, ease }}
-                />
-                {CHAPTERS.map((c, i) => {
-                    const on = i === active
-                    const show = hover === i
-                    return (
-                        <button
-                            key={c.id}
-                            onClick={() => goToChapter(i)}
-                            onMouseEnter={() => setHover(i)}
-                            onMouseLeave={() => setHover(-1)}
-                            aria-label={`Go to ${c.label}`}
-                            aria-current={on ? 'step' : undefined}
-                            className="relative flex items-center gap-3"
-                        >
-                            <motion.span
-                                className="relative z-10 block h-[11px] w-[11px] rounded-full border"
-                                animate={{
-                                    scale: on ? 1.25 : 1,
-                                    backgroundColor: i <= active ? c.accent : 'rgba(0,0,0,0)',
-                                    borderColor: i <= active ? c.accent : 'rgba(150,150,180,0.5)',
-                                }}
-                                transition={{ duration: 0.5, ease }}
-                            />
-                            <AnimatePresence>
-                                {show && (
-                                    <motion.span
-                                        initial={{ opacity: 0, x: -6 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -6 }}
-                                        transition={{ duration: 0.35, ease }}
-                                        className="whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.14em] text-fg/80"
-                                    >
-                                        {pad(i + 1)} {c.label}
-                                    </motion.span>
-                                )}
-                            </AnimatePresence>
-                        </button>
-                    )
-                })}
-            </div>
-        </nav>
     )
 }
 
@@ -109,7 +45,7 @@ export function GuideDock() {
                     transition={{ duration: 0.9, ease }}
                     className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 md:bottom-6"
                 >
-                    <div className="card flex w-full max-w-xl items-center gap-3 rounded-full !bg-surface/75 py-2 pl-2 pr-2 md:gap-4">
+                    <div className="flex w-full max-w-xl items-center gap-3 rounded-full border border-line/10 bg-surface/90 py-2 pl-2 pr-2 shadow-lg backdrop-blur-md md:gap-4">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-ink">
                             <Compass size={18} />
                         </div>
@@ -123,12 +59,9 @@ export function GuideDock() {
                                     exit={{ opacity: 0, y: -10 }}
                                     transition={{ duration: 0.45, ease }}
                                 >
-                                    <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-                                        <span className="text-accent-ink">
-                                            {pad(active + 1)} / {pad(CHAPTERS.length)}
-                                        </span>
-                                        <span className="truncate">{chapter.label}</span>
-                                    </div>
+                                    <p className="truncate text-xs text-muted">
+                                        Step {active + 1} of {CHAPTERS.length} · <span className="text-fg">{chapter.label}</span>
+                                    </p>
                                     <p className="truncate text-xs text-fg/85 md:text-sm">
                                         {active === 0 ? 'Take a guided tour of my work — about two minutes.' : chapter.hint}
                                     </p>
@@ -175,12 +108,3 @@ export function GuideDock() {
     )
 }
 
-/** Static ambient backdrop: grid + drifting aurora blobs. */
-export function Backdrop() {
-    return (
-        <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-            <div className="backdrop-grid absolute inset-0" />
-            <div className="aurora-blob left-[10%] top-[-20%] h-[50vh] w-[60vw]" style={{ background: 'var(--accent)' }} />
-        </div>
-    )
-}
